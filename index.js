@@ -13,7 +13,8 @@ const {
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ActivityType
+    ActivityType,
+    MessageFlags // ← AGGIUNTO QUI
 } = require('discord.js');
 const { createCanvas } = require('canvas');
 const config = require('./config.json');
@@ -75,7 +76,7 @@ client.on('interactionCreate', async interaction => {
         } catch (err) {
             console.error(err);
             if (!interaction.replied) {
-                await interaction.reply({ content: '❌ Errore nell\'esecuzione del comando.', ephemeral: true });
+                await interaction.reply({ content: '❌ Errore nell\'esecuzione del comando.', flags: MessageFlags.Ephemeral });
             }
         }
     }
@@ -106,7 +107,7 @@ client.on('interactionCreate', async interaction => {
             content: '🔍 Inserisci il codice mostrato nell\'immagine qui sotto:',
             files: [attachment],
             components: [row],
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -141,9 +142,9 @@ client.on('interactionCreate', async interaction => {
                 await member.roles.add(role);
             }
 
-            await interaction.reply({ content: '✅ Verifica completata con successo!', ephemeral: true });
+            await interaction.reply({ content: '✅ Verifica completata con successo!', flags: MessageFlags.Ephemeral });
         } else {
-            await interaction.reply({ content: '❌ Codice errato. Riprova.', ephemeral: true });
+            await interaction.reply({ content: '❌ Codice errato. Riprova.', flags: MessageFlags.Ephemeral });
         }
     }
 });
