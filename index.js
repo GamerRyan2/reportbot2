@@ -12,7 +12,8 @@ const {
     AttachmentBuilder,
     ModalBuilder,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    ActivityType // <-- aggiunto qui
 } = require('discord.js');
 const { createCanvas } = require('canvas');
 const config = require('./config.json');
@@ -47,7 +48,10 @@ client.once('ready', () => {
     setInterval(() => {
         const status = config.statusList[i];
         client.user.setPresence({
-            activities: [{ name: status.text, type: status.type }],
+            activities: [{
+                name: status.text,
+                type: ActivityType[status.type] // usa ActivityType invece di stringa pura
+            }],
             status: status.presence
         });
         i = (i + 1) % config.statusList.length;
