@@ -13,7 +13,7 @@ const {
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ActivityType // <-- aggiunto qui
+    ActivityType
 } = require('discord.js');
 const { createCanvas } = require('canvas');
 const config = require('./config.json');
@@ -32,14 +32,14 @@ const client = new Client({
 client.commands = new Collection();
 const captchaMap = new Map();
 
-// Carica comandi
+// Caricamento comandi
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-    client.commands.set(command.data.name, command);
-}
+fs.readdirSync(commandsPath)
+    .filter(file => file.endsWith('.js'))
+    .forEach(file => {
+        const command = require(path.join(commandsPath, file));
+        client.commands.set(command.data.name, command);
+    });
 
 // Bot pronto
 client.once('ready', () => {
@@ -50,7 +50,7 @@ client.once('ready', () => {
         client.user.setPresence({
             activities: [{
                 name: status.text,
-                type: ActivityType[status.type] // usa ActivityType invece di stringa pura
+                type: ActivityType[status.type]
             }],
             status: status.presence
         });
@@ -58,25 +58,31 @@ client.once('ready', () => {
     }, config.statusInterval || 10000);
 });
 
+// Funzione per generare testo captcha
+function generateCaptchaText(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+}
+
 // Gestione interazioni
 client.on('interactionCreate', async interaction => {
-    // Comandi
+    // Comandi slash
     if (interaction.isCommand()) {
         const command = client.commands.get(interaction.commandName);
         if (!command) return;
         try {
             await command.execute(interaction);
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
             if (!interaction.replied) {
-                await interaction.reply({ content: '❌ Errore nell\'eseguire il comando!', ephemeral: true });
+                await interaction.reply({ content: '❌ Errore nell\'esecuzione del comando.', ephemeral: true });
             }
         }
     }
 
-    // Captcha
+    // Bottone: avvio captcha
     if (interaction.isButton() && interaction.customId === 'captcha_verify_start') {
-        const captchaText = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const captchaText = generateCaptchaText(6);
         captchaMap.set(interaction.user.id, captchaText);
 
         const canvas = createCanvas(200, 80);
@@ -86,166 +92,60 @@ client.on('interactionCreate', async interaction => {
         ctx.font = '36px Sans';
         ctx.fillStyle = '#ffffff';
         ctx.fillText(captchaText, 40, 50);
+
         const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'captcha.png' });
 
-        const modal = new ModalBuilder()
-            .setCustomId('captcha_modal')
-            .setTitle('Verifica Captcha');
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('captcha_open_modal')
+                .setLabel('Inserisci codice')
+                .setStyle(ButtonStyle.Primary)
+        );
 
-        const input = new TextInputBuilder()
-            .setCustomId('captcha_input')
-            .setLabel('Inserisci il codice captcha')
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
-        await interaction.showModal(modal);
-
-        setTimeout(() => {
-            interaction.followUp({
-                content: "Ecco il tuo captcha:",
-                embeds: [verifyEmbed],
-                files: [attachment],
-                ephemeral: true
-            }).catch(() => {});
-        }, 500);
+        await interaction.reply({
+            content: '🔍 Inserisci il codice mostrato nell\'immagine qui sotto:',
+            files: [attachment],
+            components: [row],
+            ephemeral: true
+        });
     }
 
-    if (interaction.isModalSubmit() && interaction.customId === 'captcha_modal') {
-        const userCaptcha = interaction.fields.getTextInputValue('captcha_input').trim().toUpperCase();
-        const realCaptcha = captchaMap.get(interaction.user.id);
+    // Bottone: apri modal per captcha
+    if (interaction.isButton() && interaction.customId === 'captcha_open_modal') {
+        const modal = new ModalBuilder()
+            .setCustomId('captcha_modal_submit')
+            .setTitle('Verifica Captcha')
+            .addComponents(
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder()
+                        .setCustomId('captcha_input')
+                        .setLabel('Scrivi qui il codice')
+                        .setStyle(TextInputStyle.Short)
+                        .setRequired(true)
+                )
+            );
+        await interaction.showModal(modal);
+    }
 
-        if (userCaptcha === realCaptcha) {
+    // Modal: invio codice captcha
+    if (interaction.isModalSubmit() && interaction.customId === 'captcha_modal_submit') {
+        const userInput = interaction.fields.getTextInputValue('captcha_input').trim();
+        const storedCaptcha = captchaMap.get(interaction.user.id);
+
+        if (storedCaptcha && userInput === storedCaptcha) {
+            captchaMap.delete(interaction.user.id);
+
             const role = interaction.guild.roles.cache.get(config.verifyRoleId);
             if (role) {
                 const member = await interaction.guild.members.fetch(interaction.user.id);
                 await member.roles.add(role);
             }
-            captchaMap.delete(interaction.user.id);
+
             await interaction.reply({ content: '✅ Verifica completata con successo!', ephemeral: true });
         } else {
-            await interaction.reply({ content: '❌ Codice captcha errato. Riprova.', ephemeral: true });
-        }
-    }
-
-    // Pulsanti report
-    if (interaction.isButton()) {
-        if (interaction.customId.startsWith('accetta_') || interaction.customId.startsWith('rifiuta_')) {
-            const [action, reporterId, targetId] = interaction.customId.split('_');
-            const message = interaction.message;
-
-            // Disabilita pulsanti
-            const disabledRow = ActionRowBuilder.from(message.components[0]);
-            disabledRow.components.forEach(btn => btn.setDisabled(true));
-
-            await message.edit({ components: [disabledRow] });
-
-            const reporter = await interaction.client.users.fetch(reporterId);
-            const target = await interaction.client.users.fetch(targetId);
-
-            if (action === 'accetta') {
-                // DM al segnalato
-                const dmToTarget = new EmbedBuilder()
-                    .setColor('#ffcc00')
-                    .setTitle('⚠️ Sei stato segnalato')
-                    .setDescription(`Un moderatore ha preso in considerazione una segnalazione sul tuo conto.`)
-                    .addFields(
-                        { name: 'Moderatore', value: `${interaction.user}`, inline: false }
-                    )
-                    .setTimestamp();
-                await target.send({ embeds: [dmToTarget] }).catch(() => {});
-
-                // DM al reporter
-                const dmToReporter = new EmbedBuilder()
-                    .setColor('#00ff00')
-                    .setTitle('📩 Il tuo report è stato preso in considerazione')
-                    .setDescription(`Lo staff ha accettato la tua segnalazione.`)
-                    .addFields(
-                        { name: 'Staffer', value: `${interaction.user}`, inline: false }
-                    )
-                    .setTimestamp();
-                await reporter.send({ embeds: [dmToReporter] }).catch(() => {});
-
-                await interaction.reply({ content: '✅ Report preso in considerazione.', ephemeral: true });
-            }
-
-            if (action === 'rifiuta') {
-                // DM al reporter
-                const dmToReporter = new EmbedBuilder()
-                    .setColor('#ff0000')
-                    .setTitle('📩 Il tuo report è stato rifiutato')
-                    .setDescription(`Lo staff ha deciso di non procedere con la segnalazione.`)
-                    .addFields(
-                        { name: 'Staffer', value: `${interaction.user}`, inline: false }
-                    )
-                    .setTimestamp();
-                await reporter.send({ embeds: [dmToReporter] }).catch(() => {});
-
-                await interaction.reply({ content: '❌ Report rifiutato.', ephemeral: true });
-            }
+            await interaction.reply({ content: '❌ Codice errato. Riprova.', ephemeral: true });
         }
     }
 });
 
 client.login(process.env.TOKEN);
-
-
-
-// Gestione bottone verifica (mostra captcha + bottone inserimento codice)
-if (interaction.isButton() && interaction.customId === 'captcha_verify_start') {
-    const { createCanvas } = require('canvas');
-    function generateCaptchaText(length) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let text = '';
-        for (let i = 0; i < length; i++) text += chars.charAt(Math.floor(Math.random() * chars.length));
-        return text;
-    }
-    const captchaText = generateCaptchaText(6);
-    captchaMap.set(interaction.user.id, captchaText);
-
-    const canvas = createCanvas(200, 100);
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = '40px Sans';
-    ctx.fillStyle = '#000';
-    ctx.fillText(captchaText, 50, 60);
-    const { AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-    const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'captcha.png' });
-
-    const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('captcha_open_modal')
-            .setLabel('Inserisci codice')
-            .setStyle(ButtonStyle.Primary)
-    );
-
-    await interaction.reply({ content: 'Inserisci il codice del captcha qui sotto:', files: [attachment], components: [row], ephemeral: true });
-}
-
-// Gestione bottone per aprire il modal di inserimento codice captcha
-if (interaction.isButton() && interaction.customId === 'captcha_open_modal') {
-    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-    const modal = new ModalBuilder()
-        .setCustomId('captcha_modal_submit')
-        .setTitle('Verifica Captcha');
-    const input = new TextInputBuilder()
-        .setCustomId('captcha_input')
-        .setLabel('Scrivi qui il codice')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-    modal.addComponents(new ActionRowBuilder().addComponents(input));
-    await interaction.showModal(modal);
-}
-
-// Gestione submit del modal
-if (interaction.isModalSubmit() && interaction.customId === 'captcha_modal_submit') {
-    const userInput = interaction.fields.getTextInputValue('captcha_input');
-    const storedCaptcha = captchaMap.get(interaction.user.id);
-    if (storedCaptcha && userInput === storedCaptcha) {
-        captchaMap.delete(interaction.user.id);
-        await interaction.reply({ content: '✅ Verifica completata con successo!', ephemeral: true });
-    } else {
-        await interaction.reply({ content: '❌ Codice errato. Riprova.', ephemeral: true });
-    }
-}
