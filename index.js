@@ -16,6 +16,41 @@ const {
     ActivityType // <-- aggiunto qui
 } = require('discord.js');
 const { createCanvas } = require('canvas');
+
+function generateCaptcha() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let captchaText = '';
+    for (let i = 0; i < 6; i++) {
+        captchaText += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const canvas = createCanvas(240, 100);
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add some noise lines
+    for (let i = 0; i < 3; i++) {
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.stroke();
+    }
+
+    // Text
+    ctx.font = 'bold 42px Sans';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(captchaText, canvas.width / 2, canvas.height / 2);
+
+    return { image: canvas.toBuffer(), text: captchaText };
+}
+
 const config = require('./config.json');
 
 const client = new Client({
@@ -75,25 +110,20 @@ client.on('interactionCreate', async interaction => {
     }
 
     // Captcha
+    
     if (interaction.isButton() && interaction.customId === 'captcha_verify_start') {
-        const captchaText = Math.random().toString(36).substring(2, 8).toUpperCase();
-        captchaMap.set(interaction.user.id, captchaText);
+        // Genera un captcha leggibile di 6 caratteri (alfanumerico)
+        const { image, text } = generateCaptcha();
+        captchaMap.set(interaction.user.id, text);
+        const attachment = new AttachmentBuilder(image, { name: 'captcha.png' });
 
-        const canvas = createCanvas(200, 80);
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#2b2d31';
-        ctx.fillRect(0, 0, 200, 80);
-        ctx.font = '36px Sans';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(captchaText, 40, 50);
-        const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'captcha.png' });
+        // Invia l'immagine captcha all'utente in modo ephemeral, poi mostra il modal
+        await interaction.reply({
+            content: 'Inserisci il codice del captcha qui sotto:',
+            files: [attachment],
+            ephemeral: true
+        }).catch(() => {});
 
-            await interaction.reply({
-                content: 'Inserisci il codice del captcha qui sotto:',
-                files: [attachment],
-                ephemeral: true
-            });
-            
         const modal = new ModalBuilder()
             .setCustomId('captcha_modal')
             .setTitle('Verifica Captcha');
@@ -106,16 +136,8 @@ client.on('interactionCreate', async interaction => {
 
         modal.addComponents(new ActionRowBuilder().addComponents(input));
         await interaction.showModal(modal);
-
-        setTimeout(() => {
-            interaction.followUp({
-                content: "Ecco il tuo captcha:",
-                embeds: [verifyEmbed],
-                files: [attachment],
-                ephemeral: true
-            }).catch(() => {});
-        }, 500);
     }
+
 
     if (interaction.isModalSubmit() && interaction.customId === 'captcha_modal') {
         const userCaptcha = interaction.fields.getTextInputValue('captcha_input').trim().toUpperCase();
