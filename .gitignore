@@ -1,36 +1,8 @@
-# Dipendenze Node.js
+# Evita di caricare dipendenze
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# File di ambiente (token, ecc.)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Cache
-.cache/
-.tmp/
-dist/
-
-# File di sistema
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# Log
+# Evita di caricare file di log
 *.log
 
-# Build output
-out/
-build/
+# Evita di caricare variabili sensibili
+.env
