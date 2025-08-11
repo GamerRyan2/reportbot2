@@ -10,7 +10,7 @@ module.exports = {
             .setTitle('🗳️ Vota il bot!')
             .setDescription('Puoi supportare il bot votandolo sui seguenti siti:')
             .addFields(
-                { name: '🔗 Top.gg', value: '[Vota qui](https://top.gg/)', inline: false },
+                { name: '🔗 Vota Bot!', value: '[Vota qui](https://top.gg/bot/1372558922266836992?s=0ec4d0ae34c37)', inline: false },
                 { name: '🔗 Vota Server!', value: '[Vota qui](https://discordbotlist.com/servers/hamsters-house/upvote)', inline: false }
             )
             .setFooter({ text: 'Grazie per il tuo supporto ❤️' })
