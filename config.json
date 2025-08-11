@@ -1,0 +1,38 @@
+{
+  "clientId": "1372558922266836992",
+  "guildId": "1286251696640753706",
+  "reportChannelId": "1403209672306987068",
+  "staffRoleId": "1372556846178766968",
+  "verifyRoleId": "1371841690632982671",
+  "verifyEmbedTitle": "📋 VERIFY",
+  "verifyEmbedDescription": "Benvenuto! Per accedere al server clicca il pulsante e completa il captcha.\n\nSe hai problemi contatta lo staff.",
+  "verifyEmbedColor": "#2b2d31",
+  "statusList": [
+    {
+      "text": "👀 Verifica attiva",
+      "type": "WATCHING",
+      "presence": "online"
+    },
+    {
+      "text": "💬 Usa /send-verify",
+      "type": "PLAYING",
+      "presence": "online"
+    },
+    {
+      "text": "📢 Proteggiamo il server",
+      "type": "LISTENING",
+      "presence": "online"
+    },
+    {
+      "text": "🔒 Controllo in corso",
+      "type": "PLAYING",
+      "presence": "online"
+    },
+    {
+      "text": "✉️ Report disponibili",
+      "type": "WATCHING",
+      "presence": "online"
+    }
+  ],
+  "statusInterval": 15000
+}
