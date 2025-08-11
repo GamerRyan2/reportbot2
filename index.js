@@ -104,7 +104,6 @@ client.on('interactionCreate', async interaction => {
         setTimeout(() => {
             interaction.followUp({
                 content: "Ecco il tuo captcha:",
-                embeds: [verifyEmbed],
                 files: [attachment],
                 ephemeral: true
             }).catch(() => {});
