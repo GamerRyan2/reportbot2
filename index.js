@@ -14,10 +14,13 @@ const {
     TextInputBuilder,
     TextInputStyle,
     ActivityType,
-    MessageFlags // ← AGGIUNTO QUI
+    MessageFlags
 } = require('discord.js');
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont } = require('canvas'); // ← AGGIUNTO registerFont
 const config = require('./config.json');
+
+// Registra il font personalizzato per evitare l'errore Fontconfig
+registerFont(path.join(__dirname, 'fonts', 'Roboto-Italic-VariableFont_wdth,wght.ttf'), { family: 'SansCustom' });
 
 const client = new Client({
     intents: [
@@ -90,7 +93,7 @@ client.on('interactionCreate', async interaction => {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#2b2d31';
         ctx.fillRect(0, 0, 200, 80);
-        ctx.font = '36px Sans';
+        ctx.font = '36px SansCustom'; // ← Usa il font registrato
         ctx.fillStyle = '#ffffff';
         ctx.fillText(captchaText, 40, 50);
 
