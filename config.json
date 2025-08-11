@@ -5,8 +5,9 @@
   "staffRoleId": "1372556846178766968",
   "verifyRoleId": "1371841690632982671",
   "verifyEmbedTitle": "📋 VERIFY",
-  "verifyEmbedDescription": "Benvenuto! Per accedere al server clicca il pulsante e completa il captcha.\n\nSe hai problemi contatta lo staff.",
+  "verifyEmbedDescription": "Benvenuto su Hamster House\nSe vuoi unirti al nostro server, ti devi verificare.\nCliccando sul pulsante qui sotto e si avvierà  il captcha.\nSe riscontri problemi con la verifica, apri un ticket nella sezione <#1371847881425817701> :wine_glass:.",
   "verifyEmbedColor": "#2b2d31",
+  "verifyImageUrl": "https://link-tua-immagine.png",
   "statusList": [
     {
       "text": "👀 Verifica attiva",
