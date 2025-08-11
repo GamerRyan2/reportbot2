@@ -16,41 +16,6 @@ const {
     ActivityType // <-- aggiunto qui
 } = require('discord.js');
 const { createCanvas } = require('canvas');
-
-function generateCaptcha() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let captchaText = '';
-    for (let i = 0; i < 6; i++) {
-        captchaText += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    const canvas = createCanvas(240, 100);
-    const ctx = canvas.getContext('2d');
-
-    // Background
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Add some noise lines
-    for (let i = 0; i < 3; i++) {
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.stroke();
-    }
-
-    // Text
-    ctx.font = 'bold 42px Sans';
-    ctx.fillStyle = '#0f172a';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(captchaText, canvas.width / 2, canvas.height / 2);
-
-    return { image: canvas.toBuffer(), text: captchaText };
-}
-
 const config = require('./config.json');
 
 const client = new Client({
@@ -110,19 +75,18 @@ client.on('interactionCreate', async interaction => {
     }
 
     // Captcha
-    
     if (interaction.isButton() && interaction.customId === 'captcha_verify_start') {
-        // Genera un captcha leggibile di 6 caratteri (alfanumerico)
-        const { image, text } = generateCaptcha();
-        captchaMap.set(interaction.user.id, text);
-        const attachment = new AttachmentBuilder(image, { name: 'captcha.png' });
+        const captchaText = Math.random().toString(36).substring(2, 8).toUpperCase();
+        captchaMap.set(interaction.user.id, captchaText);
 
-        // Invia l'immagine captcha all'utente in modo ephemeral, poi mostra il modal
-        await interaction.reply({
-            content: 'Inserisci il codice del captcha qui sotto:',
-            files: [attachment],
-            ephemeral: true
-        }).catch(() => {});
+        const canvas = createCanvas(200, 80);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#2b2d31';
+        ctx.fillRect(0, 0, 200, 80);
+        ctx.font = '36px Sans';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(captchaText, 40, 50);
+        const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'captcha.png' });
 
         const modal = new ModalBuilder()
             .setCustomId('captcha_modal')
@@ -136,8 +100,16 @@ client.on('interactionCreate', async interaction => {
 
         modal.addComponents(new ActionRowBuilder().addComponents(input));
         await interaction.showModal(modal);
-    }
 
+        setTimeout(() => {
+            interaction.followUp({
+                content: "Ecco il tuo captcha:",
+                embeds: [verifyEmbed],
+                files: [attachment],
+                ephemeral: true
+            }).catch(() => {});
+        }, 500);
+    }
 
     if (interaction.isModalSubmit() && interaction.customId === 'captcha_modal') {
         const userCaptcha = interaction.fields.getTextInputValue('captcha_input').trim().toUpperCase();
@@ -216,3 +188,64 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.TOKEN);
+
+
+
+// Gestione bottone verifica (mostra captcha + bottone inserimento codice)
+if (interaction.isButton() && interaction.customId === 'captcha_verify_start') {
+    const { createCanvas } = require('canvas');
+    function generateCaptchaText(length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let text = '';
+        for (let i = 0; i < length; i++) text += chars.charAt(Math.floor(Math.random() * chars.length));
+        return text;
+    }
+    const captchaText = generateCaptchaText(6);
+    captchaMap.set(interaction.user.id, captchaText);
+
+    const canvas = createCanvas(200, 100);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '40px Sans';
+    ctx.fillStyle = '#000';
+    ctx.fillText(captchaText, 50, 60);
+    const { AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+    const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'captcha.png' });
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('captcha_open_modal')
+            .setLabel('Inserisci codice')
+            .setStyle(ButtonStyle.Primary)
+    );
+
+    await interaction.reply({ content: 'Inserisci il codice del captcha qui sotto:', files: [attachment], components: [row], ephemeral: true });
+}
+
+// Gestione bottone per aprire il modal di inserimento codice captcha
+if (interaction.isButton() && interaction.customId === 'captcha_open_modal') {
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+    const modal = new ModalBuilder()
+        .setCustomId('captcha_modal_submit')
+        .setTitle('Verifica Captcha');
+    const input = new TextInputBuilder()
+        .setCustomId('captcha_input')
+        .setLabel('Scrivi qui il codice')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    await interaction.showModal(modal);
+}
+
+// Gestione submit del modal
+if (interaction.isModalSubmit() && interaction.customId === 'captcha_modal_submit') {
+    const userInput = interaction.fields.getTextInputValue('captcha_input');
+    const storedCaptcha = captchaMap.get(interaction.user.id);
+    if (storedCaptcha && userInput === storedCaptcha) {
+        captchaMap.delete(interaction.user.id);
+        await interaction.reply({ content: '✅ Verifica completata con successo!', ephemeral: true });
+    } else {
+        await interaction.reply({ content: '❌ Codice errato. Riprova.', ephemeral: true });
+    }
+}
