@@ -88,6 +88,12 @@ client.on('interactionCreate', async interaction => {
         ctx.fillText(captchaText, 40, 50);
         const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'captcha.png' });
 
+            await interaction.reply({
+                content: 'Inserisci il codice del captcha qui sotto:',
+                files: [attachment],
+                ephemeral: true
+            });
+            
         const modal = new ModalBuilder()
             .setCustomId('captcha_modal')
             .setTitle('Verifica Captcha');
@@ -104,6 +110,7 @@ client.on('interactionCreate', async interaction => {
         setTimeout(() => {
             interaction.followUp({
                 content: "Ecco il tuo captcha:",
+                embeds: [verifyEmbed],
                 files: [attachment],
                 ephemeral: true
             }).catch(() => {});
