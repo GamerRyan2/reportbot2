@@ -160,6 +160,14 @@ client.on('interactionCreate', async interaction => {
     const { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
     if (interaction.isButton()) {
+
+        if (
+            interaction.customId.startsWith('captcha_') ||
+            interaction.customId.startsWith('verify_')
+        ) {
+            return;
+        }
+        
     try {
         // Disabilita i pulsanti nel messaggio originale
         const row = new ActionRowBuilder().addComponents(
