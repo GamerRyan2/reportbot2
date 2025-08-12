@@ -160,17 +160,21 @@ client.on('interactionCreate', async interaction => {
     const { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
     if (interaction.isButton()) {
+    try {
         // Disabilita i pulsanti nel messaggio originale
         const row = new ActionRowBuilder().addComponents(
-    ...interaction.message.components[0].components.map(btn =>
-        ButtonBuilder.from(btn).setDisabled(true)
-    )
-);
-await interaction.message.edit({ components: [row] });
+            ...interaction.message.components[0].components.map(btn =>
+                ButtonBuilder.from(btn).setDisabled(true)
+            )
+        );
+        await interaction.message.edit({ components: [row] });
+    } catch (err) {
+        console.error("Errore durante la disabilitazione dei pulsanti:", err);
+    }
 
-        const [action, reporterId, targetId, ...reasonParts] = interaction.customId.split('_');
-        let motivo = decodeURIComponent(reasonParts.join('_')) || 'Nessun motivo fornito';
-        if (motivo.length > 1024) motivo = motivo.slice(0, 1021) + '...';
+    const [action, reporterId, targetId, ...reasonParts] = interaction.customId.split('_');
+    let motivo = decodeURIComponent(reasonParts.join('_')) || 'Nessun motivo fornito';
+    if (motivo.length > 1024) motivo = motivo.slice(0, 1021) + '...';
 
 
         // ====== ACCETTA ======
