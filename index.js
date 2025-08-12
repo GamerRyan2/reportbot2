@@ -153,3 +153,97 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.TOKEN);
+
+
+// ======= Gestione pulsanti Report e Modal Anonimato =======
+client.on('interactionCreate', async interaction => {
+    const { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+
+    if (interaction.isButton()) {
+        const [action, reporterId, targetId, ...reasonParts] = interaction.customId.split('_');
+        const motivo = decodeURIComponent(reasonParts.join('_')) || 'Nessun motivo fornito';
+
+        // ====== ACCETTA ======
+        if (action === 'accetta') {
+            const modal = new ModalBuilder()
+                .setCustomId(`modal_accetta_${reporterId}_${targetId}_${encodeURIComponent(motivo)}`)
+                .setTitle('Opzioni accettazione report');
+
+            const anonInput = new TextInputBuilder()
+                .setCustomId('anonimo')
+                .setLabel('Vuoi che il reporter sia anonimo? (Yes / No)')
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder('Scrivi Yes o No')
+                .setRequired(true);
+
+            const row = new ActionRowBuilder().addComponents(anonInput);
+            modal.addComponents(row);
+
+            return interaction.showModal(modal);
+        }
+
+        // ====== RIFIUTA ======
+        if (action === 'rifiuta') {
+            try {
+                const reporter = await client.users.fetch(reporterId);
+
+                const rejectEmbed = new EmbedBuilder()
+                    .setColor('#ff0000')
+                    .setTitle('⚠️ Il tuo report è stato rifiutato ⚠️')
+                    .setDescription('Lo staff ha deciso di non procedere con la segnalazione.')
+                    .addFields({ name: 'Report preso in considerazione da', value: `${interaction.user}` });
+
+                await reporter.send({ embeds: [rejectEmbed] });
+                await interaction.reply({ content: '❌ Report rifiutato e notificato al reporter.', ephemeral: true });
+            } catch (err) {
+                console.error(err);
+                await interaction.reply({ content: 'Errore nell\'invio del messaggio al reporter.', ephemeral: true });
+            }
+        }
+    }
+
+    // ====== GESTIONE MODAL ACCETTA ======
+    if (interaction.isModalSubmit()) {
+        if (interaction.customId.startsWith('modal_accetta_')) {
+            const parts = interaction.customId.split('_');
+            const reporterId = parts[2];
+            const targetId = parts[3];
+            const motivo = decodeURIComponent(parts.slice(4).join('_'));
+            const anonChoice = interaction.fields.getTextInputValue('anonimo').trim().toLowerCase();
+
+            try {
+                const reporter = await client.users.fetch(reporterId);
+                const target = await client.users.fetch(targetId);
+
+                // Embed per l'utente segnalato (warn)
+                const warnEmbed = new EmbedBuilder()
+                    .setColor('#ffcc00')
+                    .setTitle('⚠️ Sei stato warnato ⚠️')
+                    .setDescription('È stata inviata una nuova segnalazione allo staff.')
+                    .addFields(
+                        { name: 'Segnalato da', value: anonChoice === 'yes' ? 'Anonimo' : `${reporter}` },
+                        { name: 'Motivo', value: motivo },
+                        { name: 'Report preso in considerazione da', value: `${interaction.user}` }
+                    );
+
+                // Embed per il reporter (accettato)
+                const acceptEmbed = new EmbedBuilder()
+                    .setColor('#ffcc00')
+                    .setTitle('⚠️ Il tuo report è stato preso in considerazione ⚠️')
+                    .setDescription('Lo staff ha accettato la tua segnalazione.')
+                    .addFields({ name: 'Report preso in considerazione da', value: `${interaction.user}` });
+
+                // Invia al segnalato solo se accettato
+                await target.send({ embeds: [warnEmbed] });
+
+                // Invia al reporter
+                await reporter.send({ embeds: [acceptEmbed] });
+
+                await interaction.reply({ content: '✅ Report accettato e notifiche inviate.', ephemeral: true });
+            } catch (err) {
+                console.error(err);
+                await interaction.reply({ content: 'Errore nell\'invio delle notifiche.', ephemeral: true });
+            }
+        }
+    }
+});
