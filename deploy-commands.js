@@ -3,7 +3,7 @@ const { REST, Routes } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-// ===== CONFIG =====
+// ===== Variabili da .env =====
 const token = process.env.TOKEN;
 const clientId = process.env.CLIENT_ID;
 const guildId = process.env.GUILD_ID;
@@ -13,19 +13,14 @@ if (!token || !clientId || !guildId) {
     process.exit(1);
 }
 
-// ===== LETTURA COMANDI =====
+// ===== Lettura comandi dalla cartella /commands =====
 const commandsPath = path.join(__dirname, 'commands');
 if (!fs.existsSync(commandsPath)) {
-    console.error(`❌ La cartella "commands" non esiste in ${commandsPath}`);
+    console.error(`❌ Cartella "commands" non trovata: ${commandsPath}`);
     process.exit(1);
 }
 
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-
-if (commandFiles.length === 0) {
-    console.warn("⚠️ Nessun comando trovato nella cartella /commands");
-}
-
 const commands = [];
 
 for (const file of commandFiles) {
@@ -34,26 +29,33 @@ for (const file of commandFiles) {
 
     if ('data' in command && 'execute' in command) {
         commands.push(command.data.toJSON());
-        console.log(`✅ Comando caricato: ${command.data.name}`);
+        console.log(`✅ Caricato comando: ${command.data.name}`);
     } else {
-        console.warn(`⚠️ Comando ignorato (manca data o execute): ${file}`);
+        console.warn(`⚠️ Ignorato file: ${file} (manca "data" o "execute")`);
     }
 }
 
-// ===== REGISTRAZIONE =====
 const rest = new REST({ version: '10' }).setToken(token);
 
 (async () => {
     try {
-        console.log(`\n🔄 Ricaricamento di ${commands.length} comandi slash nella gilda ${guildId}...`);
+        console.log(`\n🔄 Pulizia comandi GLOBALI...`);
+        await rest.put(Routes.applicationCommands(clientId), { body: [] });
+        console.log(`✅ Comandi globali rimossi.`);
 
-        const data = await rest.put(
+        console.log(`\n🔄 Pulizia comandi GILDA (${guildId})...`);
+        await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+        console.log(`✅ Comandi gilda rimossi.`);
+
+        console.log(`\n🚀 Caricamento nuovi comandi nella gilda...`);
+        const dataGuild = await rest.put(
             Routes.applicationGuildCommands(clientId, guildId),
             { body: commands }
         );
 
-        console.log(`\n✅ Operazione completata: ${data.length} comandi attivi ora nella gilda.`);
+        console.log(`✅ ${dataGuild.length} comandi registrati nella gilda.`);
+        console.log(`\n✨ Deploy completato!`);
     } catch (error) {
-        console.error("❌ Errore durante il deploy dei comandi:", error);
+        console.error("❌ Errore durante il deploy:", error);
     }
 })();
