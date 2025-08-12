@@ -160,8 +160,18 @@ client.on('interactionCreate', async interaction => {
     const { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
     if (interaction.isButton()) {
+        // Disabilita i pulsanti nel messaggio originale
+        const row = new ActionRowBuilder().addComponents(
+    ...interaction.message.components[0].components.map(btn =>
+        ButtonBuilder.from(btn).setDisabled(true)
+    )
+);
+await interaction.message.edit({ components: [row] });
+
         const [action, reporterId, targetId, ...reasonParts] = interaction.customId.split('_');
-        const motivo = decodeURIComponent(reasonParts.join('_')) || 'Nessun motivo fornito';
+        let motivo = decodeURIComponent(reasonParts.join('_')) || 'Nessun motivo fornito';
+        if (motivo.length > 1024) motivo = motivo.slice(0, 1021) + '...';
+
 
         // ====== ACCETTA ======
         if (action === 'accetta') {
@@ -208,7 +218,9 @@ client.on('interactionCreate', async interaction => {
             const parts = interaction.customId.split('_');
             const reporterId = parts[2];
             const targetId = parts[3];
-            const motivo = decodeURIComponent(parts.slice(4).join('_'));
+            let motivo = decodeURIComponent(parts.slice(4).join('_'));
+            if (motivo.length > 1024) motivo = motivo.slice(0, 1021) + '...';
+
             const anonChoice = interaction.fields.getTextInputValue('anonimo').trim().toLowerCase();
 
             try {

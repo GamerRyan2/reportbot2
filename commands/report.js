@@ -30,13 +30,16 @@ module.exports = {
             )
             .setTimestamp();
 
+        // Codifica il motivo per poterlo passare al modal in index.js
+        const encodedReason = encodeURIComponent(reason);
+
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setCustomId(`accetta_${reporter.id}_${target.id}`)
+                .setCustomId(`accetta_${reporter.id}_${target.id}_${encodedReason}`)
                 .setLabel('✅ Prendi in considerazione')
                 .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-                .setCustomId(`rifiuta_${reporter.id}_${target.id}`)
+                .setCustomId(`rifiuta_${reporter.id}_${target.id}_${encodedReason}`)
                 .setLabel('❌ Rifiuta')
                 .setStyle(ButtonStyle.Danger)
         );
