@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { checkMessage } = require("./utils/antibestemmie");
 const fs = require('fs');
 const path = require('path');
 const {
@@ -18,6 +19,7 @@ const {
 } = require('discord.js');
 const { createCanvas, registerFont } = require('canvas'); // ← AGGIUNTO registerFont
 const config = require('./config.json');
+
 
 // Registra il font personalizzato per evitare l'errore Fontconfig
 registerFont(path.join(__dirname, 'fonts', 'Roboto-Italic-VariableFont_wdth,wght.ttf'), { family: 'SansCustom' });
@@ -153,6 +155,11 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.TOKEN);
+
+// ======= Filtro bestemmie =======
+client.on("messageCreate", async (message) => {
+    await checkMessage(message);
+});
 
 
 // ======= Gestione pulsanti Report e Modal Anonimato =======
