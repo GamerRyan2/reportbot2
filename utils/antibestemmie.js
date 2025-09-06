@@ -1,16 +1,16 @@
 const fs = require("fs");
 const path = require("path");
 
-// Percorso del file blacklist dentro la cartella utils
+// Percorso fisso in utils
 const blacklistPath = path.join(__dirname, "blacklist.json");
 
-// Crea file vuoto se non esiste
+// Crea file se non esiste
 if (!fs.existsSync(blacklistPath)) {
-    fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
+    fs.writeFileSync(blacklistPath, "[]", "utf-8");
     console.log("[ANTIBESTEMMIE] File blacklist.json creato in utils!");
 }
 
-// Carica la blacklist
+// Carica blacklist
 function loadBlacklist() {
     try {
         const data = fs.readFileSync(blacklistPath, "utf-8");
@@ -21,7 +21,7 @@ function loadBlacklist() {
     }
 }
 
-// Salva la blacklist
+// Salva blacklist
 function saveBlacklist(list) {
     try {
         fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
@@ -31,7 +31,7 @@ function saveBlacklist(list) {
     }
 }
 
-// Normalizza testo (numeri, simboli e accenti)
+// Normalizza stringa
 function normalize(text) {
     return text
         .toLowerCase()
@@ -50,12 +50,12 @@ function normalize(text) {
         .replace(/[^a-z\s]/g, "");
 }
 
-// Controlla se un testo contiene bestemmie
+// Controlla messaggi
 function containsBadWord(text) {
     const blacklist = loadBlacklist();
     const normalizedText = normalize(text);
     return blacklist.some(word => {
-        const pattern = new RegExp(`\\b${word}\\b`, "i"); // solo parole intere
+        const pattern = new RegExp(`\\b${word}\\b`, "i"); // parole intere
         return pattern.test(normalizedText);
     });
 }
