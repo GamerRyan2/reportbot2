@@ -1,35 +1,34 @@
 const fs = require("fs");
 const path = require("path");
 
-// Percorso cartella data e blacklist
-const dataDir = path.join(__dirname, "../data");
+// Percorso cartella data e file blacklist
+const dataDir = path.resolve(__dirname, "../data");
 const blacklistPath = path.join(dataDir, "blacklist.json");
 
-// Assicuriamoci che la cartella data esista
+// Crea la cartella data se non esiste
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Carica blacklist dal file (crea il file se non esiste)
+// Carica la blacklist o crea il file se non esiste
 function loadBlacklist() {
   if (!fs.existsSync(blacklistPath)) {
     fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
   }
-  const content = fs.readFileSync(blacklistPath, "utf-8");
   try {
-    return JSON.parse(content);
+    return JSON.parse(fs.readFileSync(blacklistPath, "utf-8"));
   } catch (err) {
     console.error("Errore leggendo blacklist.json:", err);
     return [];
   }
 }
 
-// Salva blacklist su file
+// Salva la blacklist nel file
 function saveBlacklist(list) {
   fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
 }
 
-// Normalizza stringa (numeri → lettere, simboli → lettere, minuscolo)
+// Normalizza stringa (numeri, simboli e accenti)
 function normalize(text) {
   return text
     .toLowerCase()
@@ -45,12 +44,12 @@ function normalize(text) {
     .replace(/[8]/g, "b")
     .replace(/[9]/g, "g")
     .replace(/[@!]/g, "a")
-    .replace(/[^a-z\s]/g, ""); // rimuove simboli vari ma lascia spazi
+    .replace(/[^a-z\s]/g, ""); // rimuove simboli ma lascia spazi
 }
 
 // Controlla se il testo contiene bestemmie
 function containsBadWord(text) {
-  const blacklist = loadBlacklist(); // già normalizzate
+  const blacklist = loadBlacklist();
   const normalizedText = normalize(text);
 
   return blacklist.some(word => {
@@ -75,4 +74,9 @@ async function checkMessage(message) {
   }
 }
 
-module.exports = { checkMessage, loadBlacklist, saveBlacklist, normalize };
+module.exports = {
+  checkMessage,
+  loadBlacklist,
+  saveBlacklist,
+  normalize
+}

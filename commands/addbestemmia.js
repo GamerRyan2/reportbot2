@@ -4,10 +4,10 @@ const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestem
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("addbestemmia")
-    .setDescription("Aggiunge una nuova parola alla blacklist bestemmie")
+    .setDescription("Aggiunge una parola alla blacklist")
     .addStringOption(option =>
       option.setName("parola")
-        .setDescription("La parola da aggiungere alla blacklist")
+        .setDescription("La parola da aggiungere")
         .setRequired(true)
     ),
 
@@ -16,7 +16,6 @@ module.exports = {
     const normalizedWord = normalize(word);
     const blacklist = loadBlacklist();
 
-    // Controllo duplicati
     if (blacklist.includes(normalizedWord)) {
       return interaction.reply({
         content: `❌ La parola **${word}** è già nella blacklist.`,
@@ -24,8 +23,8 @@ module.exports = {
       });
     }
 
-    blacklist.push(normalizedWord); // salvo normalizzata
-    saveBlacklist(blacklist); // scrive su file persistente
+    blacklist.push(normalizedWord); // salva normalizzata
+    saveBlacklist(blacklist);       // scrive su file persistente
 
     return interaction.reply({
       content: `✅ La parola **${word}** è stata aggiunta alla blacklist.`,
