@@ -1,23 +1,26 @@
 const fs = require("fs");
 const path = require("path");
 
-// Percorso del file blacklist
-const blacklistPath = path.join(__dirname, "../data/blacklist.json");
+// Percorso cartella data e blacklist
+const dataDir = path.join(__dirname, "../data");
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+
+const blacklistPath = path.join(dataDir, "blacklist.json");
 
 // Carica blacklist
 function loadBlacklist() {
   if (!fs.existsSync(blacklistPath)) {
-    fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2));
+    fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
   }
-  return JSON.parse(fs.readFileSync(blacklistPath));
+  return JSON.parse(fs.readFileSync(blacklistPath, "utf-8"));
 }
 
 // Salva blacklist
 function saveBlacklist(list) {
-  fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2));
+  fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
 }
 
-// Normalizza stringa (numeri → lettere, simboli → lettere, tutto minuscolo)
+// Normalizza stringa (numeri → lettere, simboli → lettere, minuscolo)
 function normalize(text) {
   return text
     .toLowerCase()
@@ -36,23 +39,19 @@ function normalize(text) {
     .replace(/[^a-z\s]/g, ""); // rimuove simboli vari ma lascia spazi
 }
 
-// Controlla messaggi con filtro avanzato
+// Controlla se il testo contiene bestemmie
 function containsBadWord(text) {
   const blacklist = loadBlacklist();
   const normalizedText = normalize(text);
 
-  // Creiamo regex dinamiche per ogni parola della blacklist
   return blacklist.some(word => {
     const normalizedWord = normalize(word);
-
-    // pattern per trovare la parola anche attaccata a simboli o separata da punti
-    const pattern = new RegExp(`\\b${normalizedWord}\\b`, 'i');
-
+    const pattern = new RegExp(`\\b${normalizedWord}\\b`, "i");
     return pattern.test(normalizedText);
   });
 }
 
-// Middleware filtro
+// Middleware filtro messaggi
 async function checkMessage(message) {
   if (message.author.bot) return;
 

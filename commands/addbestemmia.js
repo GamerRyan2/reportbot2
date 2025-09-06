@@ -12,19 +12,19 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    let word = interaction.options.getString("parola").toLowerCase();
+    const word = interaction.options.getString("parola");
+    const normalizedWord = normalize(word);
     const blacklist = loadBlacklist();
 
-    // Normalizziamo per evitare duplicati mascherati
-    const normalizedBlacklist = blacklist.map(normalize);
-    if (normalizedBlacklist.includes(normalize(word))) {
+    // Controllo duplicati normalizzati
+    if (blacklist.includes(normalizedWord)) {
       return interaction.reply({
         content: `❌ La parola **${word}** è già nella blacklist.`,
         ephemeral: true
       });
     }
 
-    blacklist.push(word);
+    blacklist.push(normalizedWord); // salvo già normalizzata
     saveBlacklist(blacklist);
 
     return interaction.reply({
