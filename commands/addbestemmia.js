@@ -27,8 +27,8 @@ module.exports = {
       });
     }
 
-    blacklist.push(normalizedWord); // aggiunge parola normalizzata
-    saveBlacklist(blacklist);       // salva nel file
+    blacklist.push(normalizedWord);
+    saveBlacklist(blacklist);
 
     return interaction.reply({
       content: `✅ La parola **${word}** è stata aggiunta alla blacklist.`,

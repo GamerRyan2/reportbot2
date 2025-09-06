@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-// Percorso assoluto della root del progetto
 const rootDir = path.resolve(__dirname, "..");
 const dataDir = path.join(rootDir, "data");
 const blacklistPath = path.join(dataDir, "blacklist.json");
@@ -12,7 +11,7 @@ if (!fs.existsSync(dataDir)) {
   console.log("[ANTIBESTEMMIE] Cartella data creata!");
 }
 
-// Carica blacklist o crea file vuoto se non esiste
+// Carica blacklist o crea file vuoto
 function loadBlacklist() {
   if (!fs.existsSync(blacklistPath)) {
     fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
@@ -20,6 +19,7 @@ function loadBlacklist() {
   }
   try {
     const data = fs.readFileSync(blacklistPath, "utf-8");
+    if (!data.trim()) return []; // file vuoto
     return JSON.parse(data);
   } catch (err) {
     console.error("[ANTIBESTEMMIE] Errore leggendo blacklist.json:", err);
@@ -27,11 +27,12 @@ function loadBlacklist() {
   }
 }
 
-// Salva blacklist sul file
+// Salva blacklist
 function saveBlacklist(list) {
   try {
+    if (!Array.isArray(list)) list = [];
     fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
-    console.log("[ANTIBESTEMMIE] Blacklist salvata correttamente su:", blacklistPath);
+    console.log("[ANTIBESTEMMIE] Blacklist salvata:", list);
   } catch (err) {
     console.error("[ANTIBESTEMMIE] Errore salvando blacklist:", err);
   }
@@ -60,16 +61,12 @@ function normalize(text) {
 function containsBadWord(text) {
   const blacklist = loadBlacklist();
   const normalizedText = normalize(text);
-  return blacklist.some(word => {
-    const pattern = new RegExp(`\\b${word}\\b`, "i"); // parole intere
-    return pattern.test(normalizedText);
-  });
+  return blacklist.some(word => normalizedText.includes(word));
 }
 
 // Middleware filtro messaggi
 async function checkMessage(message) {
   if (message.author.bot) return;
-
   if (containsBadWord(message.content)) {
     try {
       await message.delete();
@@ -80,11 +77,10 @@ async function checkMessage(message) {
   }
 }
 
-// Esporta tutto
 module.exports = {
   checkMessage,
   loadBlacklist,
   saveBlacklist,
   normalize,
-  blacklistPath // export anche il percorso per debug
+  blacklistPath
 };
