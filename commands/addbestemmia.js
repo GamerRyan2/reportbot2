@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmia");
+const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmie");
 
 module.exports = {
   data: new SlashCommandBuilder()
