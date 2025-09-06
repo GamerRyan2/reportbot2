@@ -1,86 +1,83 @@
 const fs = require("fs");
 const path = require("path");
 
-const rootDir = path.resolve(__dirname, "..");
-const dataDir = path.join(rootDir, "data");
-const blacklistPath = path.join(dataDir, "blacklist.json");
+// Percorso del file blacklist dentro la cartella utils
+const blacklistPath = path.join(__dirname, "blacklist.json");
 
-// Crea la cartella data se non esiste
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-  console.log("[ANTIBESTEMMIE] Cartella data creata!");
-}
-
-// Carica blacklist o crea file vuoto
-function loadBlacklist() {
-  if (!fs.existsSync(blacklistPath)) {
+// Crea file vuoto se non esiste
+if (!fs.existsSync(blacklistPath)) {
     fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
-    console.log("[ANTIBESTEMMIE] File blacklist.json creato!");
-  }
-  try {
-    const data = fs.readFileSync(blacklistPath, "utf-8");
-    if (!data.trim()) return []; // file vuoto
-    return JSON.parse(data);
-  } catch (err) {
-    console.error("[ANTIBESTEMMIE] Errore leggendo blacklist.json:", err);
-    return [];
-  }
+    console.log("[ANTIBESTEMMIE] File blacklist.json creato in utils!");
 }
 
-// Salva blacklist
+// Carica la blacklist
+function loadBlacklist() {
+    try {
+        const data = fs.readFileSync(blacklistPath, "utf-8");
+        return JSON.parse(data);
+    } catch (err) {
+        console.error("[ANTIBESTEMMIE] Errore leggendo blacklist.json:", err);
+        return [];
+    }
+}
+
+// Salva la blacklist
 function saveBlacklist(list) {
-  try {
-    if (!Array.isArray(list)) list = [];
-    fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
-    console.log("[ANTIBESTEMMIE] Blacklist salvata:", list);
-  } catch (err) {
-    console.error("[ANTIBESTEMMIE] Errore salvando blacklist:", err);
-  }
+    try {
+        fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
+        console.log("[ANTIBESTEMMIE] Blacklist salvata!");
+    } catch (err) {
+        console.error("[ANTIBESTEMMIE] Errore salvando blacklist:", err);
+    }
 }
 
-// Normalizza stringa (numeri, simboli, accenti)
+// Normalizza testo (numeri, simboli e accenti)
 function normalize(text) {
-  return text
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[0]/g, "o")
-    .replace(/[1]/g, "i")
-    .replace(/[2]/g, "z")
-    .replace(/[3]/g, "e")
-    .replace(/[4]/g, "a")
-    .replace(/[5]/g, "s")
-    .replace(/[6]/g, "g")
-    .replace(/[7]/g, "t")
-    .replace(/[8]/g, "b")
-    .replace(/[9]/g, "g")
-    .replace(/[@!]/g, "a")
-    .replace(/[^a-z\s]/g, "");
+    return text
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[0]/g, "o")
+        .replace(/[1]/g, "i")
+        .replace(/[2]/g, "z")
+        .replace(/[3]/g, "e")
+        .replace(/[4]/g, "a")
+        .replace(/[5]/g, "s")
+        .replace(/[6]/g, "g")
+        .replace(/[7]/g, "t")
+        .replace(/[8]/g, "b")
+        .replace(/[9]/g, "g")
+        .replace(/[@!]/g, "a")
+        .replace(/[^a-z\s]/g, "");
 }
 
-// Controlla se il messaggio contiene bestemmie
+// Controlla se un testo contiene bestemmie
 function containsBadWord(text) {
-  const blacklist = loadBlacklist();
-  const normalizedText = normalize(text);
-  return blacklist.some(word => normalizedText.includes(word));
+    const blacklist = loadBlacklist();
+    const normalizedText = normalize(text);
+    return blacklist.some(word => {
+        const pattern = new RegExp(`\\b${word}\\b`, "i"); // solo parole intere
+        return pattern.test(normalizedText);
+    });
 }
 
 // Middleware filtro messaggi
 async function checkMessage(message) {
-  if (message.author.bot) return;
-  if (containsBadWord(message.content)) {
-    try {
-      await message.delete();
-      await message.channel.send(`${message.author}, il tuo messaggio è stato eliminato perché conteneva bestemmie.`);
-    } catch (err) {
-      console.error("[ANTIBESTEMMIE] Errore eliminando messaggio:", err);
+    if (message.author.bot) return;
+
+    if (containsBadWord(message.content)) {
+        try {
+            await message.delete();
+            await message.channel.send(`${message.author}, il tuo messaggio è stato eliminato perché conteneva bestemmie.`);
+        } catch (err) {
+            console.error("[ANTIBESTEMMIE] Errore eliminando messaggio:", err);
+        }
     }
-  }
 }
 
 module.exports = {
-  checkMessage,
-  loadBlacklist,
-  saveBlacklist,
-  normalize,
-  blacklistPath
+    checkMessage,
+    loadBlacklist,
+    saveBlacklist,
+    normalize,
+    blacklistPath
 };
