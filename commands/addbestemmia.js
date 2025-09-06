@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmie");
+const { loadBlacklist, saveBlacklist, normalize, blacklistPath } = require("../utils/antibestemmie");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,7 +14,11 @@ module.exports = {
   async execute(interaction) {
     const word = interaction.options.getString("parola");
     const normalizedWord = normalize(word);
-    const blacklist = loadBlacklist();
+    let blacklist = loadBlacklist();
+
+    console.log("[ADD BESTEMMIA] Comando ricevuto:", word);
+    console.log("[ADD BESTEMMIA] Normalizzata:", normalizedWord);
+    console.log("[ADD BESTEMMIA] Percorso blacklist:", blacklistPath);
 
     if (blacklist.includes(normalizedWord)) {
       return interaction.reply({
@@ -23,8 +27,8 @@ module.exports = {
       });
     }
 
-    blacklist.push(normalizedWord); // salva normalizzata
-    saveBlacklist(blacklist);       // scrive su file persistente
+    blacklist.push(normalizedWord); // aggiunge parola normalizzata
+    saveBlacklist(blacklist);       // salva nel file
 
     return interaction.reply({
       content: `✅ La parola **${word}** è stata aggiunta alla blacklist.`,
