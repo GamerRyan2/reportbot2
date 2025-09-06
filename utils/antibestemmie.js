@@ -17,28 +17,39 @@ function saveBlacklist(list) {
   fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2));
 }
 
-// Normalizza stringa (numeri → lettere, font strani → normali, tutto minuscolo)
+// Normalizza stringa (numeri → lettere, simboli → lettere, tutto minuscolo)
 function normalize(text) {
   return text
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // rimuove accenti
-    .replace(/[0-4]/g, "o") // 0,1,2,3,4 simili a o
-    .replace(/5/g, "s")
-    .replace(/6/g, "g")
-    .replace(/7/g, "t")
-    .replace(/8/g, "b")
-    .replace(/9/g, "g")
-    .replace(/1/g, "i")
-    .replace(/[@]/g, "a")
-    .replace(/[^a-z]/g, ""); // rimuove simboli vari
+    .replace(/[0]/g, "o")
+    .replace(/[1]/g, "i")
+    .replace(/[2]/g, "z")
+    .replace(/[3]/g, "e")
+    .replace(/[4]/g, "a")
+    .replace(/[5]/g, "s")
+    .replace(/[6]/g, "g")
+    .replace(/[7]/g, "t")
+    .replace(/[8]/g, "b")
+    .replace(/[9]/g, "g")
+    .replace(/[@!]/g, "a")
+    .replace(/[^a-z\s]/g, ""); // rimuove simboli vari ma lascia spazi
 }
 
-// Controlla messaggi
+// Controlla messaggi con filtro avanzato
 function containsBadWord(text) {
   const blacklist = loadBlacklist();
   const normalizedText = normalize(text);
 
-  return blacklist.some(word => normalizedText.includes(normalize(word)));
+  // Creiamo regex dinamiche per ogni parola della blacklist
+  return blacklist.some(word => {
+    const normalizedWord = normalize(word);
+
+    // pattern per trovare la parola anche attaccata a simboli o separata da punti
+    const pattern = new RegExp(`\\b${normalizedWord}\\b`, 'i');
+
+    return pattern.test(normalizedText);
+  });
 }
 
 // Middleware filtro
@@ -48,11 +59,13 @@ async function checkMessage(message) {
   if (containsBadWord(message.content)) {
     try {
       await message.delete();
-      await message.channel.send(`${message.author}, il tuo messaggio è stato eliminato perché conteneva bestemmie.`);
+      await message.channel.send(
+        `${message.author}, il tuo messaggio è stato eliminato perché conteneva bestemmie.`
+      );
     } catch (err) {
       console.error("Errore eliminando messaggio:", err);
     }
   }
 }
 
-module.exports = { checkMessage, loadBlacklist, saveBlacklist };
+module.exports = { checkMessage, loadBlacklist, saveBlacklist, normalize };

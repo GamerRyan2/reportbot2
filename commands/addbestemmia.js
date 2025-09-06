@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { loadBlacklist, saveBlacklist } = require("../utils/antibestemmie");
+const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmie");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,12 +12,14 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const word = interaction.options.getString("parola").toLowerCase();
+    let word = interaction.options.getString("parola").toLowerCase();
     const blacklist = loadBlacklist();
 
-    if (blacklist.includes(word)) {
+    // Normalizziamo per evitare duplicati mascherati
+    const normalizedBlacklist = blacklist.map(normalize);
+    if (normalizedBlacklist.includes(normalize(word))) {
       return interaction.reply({
-        content: "❌ Questa parola **${word}** è già nella blacklist.",
+        content: `❌ La parola **${word}** è già nella blacklist.`,
         ephemeral: true
       });
     }
