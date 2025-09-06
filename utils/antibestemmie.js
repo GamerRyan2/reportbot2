@@ -1,19 +1,20 @@
 const fs = require("fs");
 const path = require("path");
 
-// Percorso fisso in utils
-const blacklistPath = path.join(__dirname, "blacklist.json");
+// Percorso blacklist dentro utils
+const dataDir = __dirname;
+const blacklistPath = path.join(dataDir, "blacklist.json");
 
-// Crea file se non esiste
+// Crea file vuoto se non esiste
 if (!fs.existsSync(blacklistPath)) {
-    fs.writeFileSync(blacklistPath, "[]", "utf-8");
-    console.log("[ANTIBESTEMMIE] File blacklist.json creato in utils!");
+    fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
+    console.log("[ANTIBESTEMMIE] blacklist.json creato in utils!");
 }
 
-// Carica blacklist
 function loadBlacklist() {
     try {
         const data = fs.readFileSync(blacklistPath, "utf-8");
+        if (!data) return [];
         return JSON.parse(data);
     } catch (err) {
         console.error("[ANTIBESTEMMIE] Errore leggendo blacklist.json:", err);
@@ -21,7 +22,6 @@ function loadBlacklist() {
     }
 }
 
-// Salva blacklist
 function saveBlacklist(list) {
     try {
         fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
@@ -31,7 +31,6 @@ function saveBlacklist(list) {
     }
 }
 
-// Normalizza stringa
 function normalize(text) {
     return text
         .toLowerCase()
@@ -50,20 +49,14 @@ function normalize(text) {
         .replace(/[^a-z\s]/g, "");
 }
 
-// Controlla messaggi
 function containsBadWord(text) {
     const blacklist = loadBlacklist();
     const normalizedText = normalize(text);
-    return blacklist.some(word => {
-        const pattern = new RegExp(`\\b${word}\\b`, "i"); // parole intere
-        return pattern.test(normalizedText);
-    });
+    return blacklist.some(word => new RegExp(`\\b${word}\\b`, "i").test(normalizedText));
 }
 
-// Middleware filtro messaggi
 async function checkMessage(message) {
     if (message.author.bot) return;
-
     if (containsBadWord(message.content)) {
         try {
             await message.delete();
