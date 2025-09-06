@@ -3,11 +3,11 @@ const path = require("path");
 
 // Percorso cartella data e blacklist
 const dataDir = path.join(__dirname, "../data");
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const blacklistPath = path.join(dataDir, "blacklist.json");
 
-// Carica blacklist
+// Carica blacklist (crea file se non esiste)
 function loadBlacklist() {
   if (!fs.existsSync(blacklistPath)) {
     fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
@@ -36,17 +36,16 @@ function normalize(text) {
     .replace(/[8]/g, "b")
     .replace(/[9]/g, "g")
     .replace(/[@!]/g, "a")
-    .replace(/[^a-z\s]/g, ""); // rimuove simboli vari ma lascia spazi
+    .replace(/[^a-z\s]/g, ""); // rimuove simboli ma lascia spazi
 }
 
 // Controlla se il testo contiene bestemmie
 function containsBadWord(text) {
-  const blacklist = loadBlacklist();
+  const blacklist = loadBlacklist(); // già normalizzate
   const normalizedText = normalize(text);
 
   return blacklist.some(word => {
-    const normalizedWord = normalize(word);
-    const pattern = new RegExp(`\\b${normalizedWord}\\b`, "i");
+    const pattern = new RegExp(`\\b${word}\\b`, "i"); // solo parole intere
     return pattern.test(normalizedText);
   });
 }

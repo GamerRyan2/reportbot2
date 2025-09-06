@@ -16,7 +16,7 @@ module.exports = {
     const normalizedWord = normalize(word);
     const blacklist = loadBlacklist();
 
-    // Controllo duplicati normalizzati
+    // Controllo duplicati
     if (blacklist.includes(normalizedWord)) {
       return interaction.reply({
         content: `❌ La parola **${word}** è già nella blacklist.`,
