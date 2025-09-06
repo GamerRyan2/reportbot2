@@ -3,19 +3,28 @@ const path = require("path");
 
 // Percorso cartella data e blacklist
 const dataDir = path.join(__dirname, "../data");
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
 const blacklistPath = path.join(dataDir, "blacklist.json");
 
-// Carica blacklist (crea file se non esiste)
+// Assicuriamoci che la cartella data esista
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Carica blacklist dal file (crea il file se non esiste)
 function loadBlacklist() {
   if (!fs.existsSync(blacklistPath)) {
     fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
   }
-  return JSON.parse(fs.readFileSync(blacklistPath, "utf-8"));
+  const content = fs.readFileSync(blacklistPath, "utf-8");
+  try {
+    return JSON.parse(content);
+  } catch (err) {
+    console.error("Errore leggendo blacklist.json:", err);
+    return [];
+  }
 }
 
-// Salva blacklist
+// Salva blacklist su file
 function saveBlacklist(list) {
   fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
 }
@@ -24,7 +33,7 @@ function saveBlacklist(list) {
 function normalize(text) {
   return text
     .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // rimuove accenti
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[0]/g, "o")
     .replace(/[1]/g, "i")
     .replace(/[2]/g, "z")
@@ -36,7 +45,7 @@ function normalize(text) {
     .replace(/[8]/g, "b")
     .replace(/[9]/g, "g")
     .replace(/[@!]/g, "a")
-    .replace(/[^a-z\s]/g, ""); // rimuove simboli ma lascia spazi
+    .replace(/[^a-z\s]/g, ""); // rimuove simboli vari ma lascia spazi
 }
 
 // Controlla se il testo contiene bestemmie

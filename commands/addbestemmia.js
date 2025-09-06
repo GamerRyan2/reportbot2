@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmie");
+const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmia");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,8 +24,8 @@ module.exports = {
       });
     }
 
-    blacklist.push(normalizedWord); // salvo già normalizzata
-    saveBlacklist(blacklist);
+    blacklist.push(normalizedWord); // salvo normalizzata
+    saveBlacklist(blacklist); // scrive su file persistente
 
     return interaction.reply({
       content: `✅ La parola **${word}** è stata aggiunta alla blacklist.`,
