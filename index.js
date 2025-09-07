@@ -1,5 +1,5 @@
 require('dotenv').config();
-
+const { startBump, stopBump } = require('./bump');
 const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActivityType, MessageFlags } = require('discord.js');
@@ -45,6 +45,10 @@ client.once('ready', () => {
         });
         i = (i + 1) % config.statusList.length;
     }, config.statusInterval || 10000);
+
+
+    const CHANNEL_ID = '1371920930728710326';
+    startBump(client, CHANNEL_ID);
 });
 
 // ===== Funzione captcha =====
