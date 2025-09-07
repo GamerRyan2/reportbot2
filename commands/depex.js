@@ -28,13 +28,12 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle("📤 Ruolo Rimosso (/depex)")
+        .setTitle("📤 DEPEX")
         .setColor("Red")
         .addFields(
-          { name: "👤 Utente", value: `${member.user.tag}`, inline: true },
-          { name: "📌 Ruolo Rimasto", value: ruoloPrima.toString(), inline: true },
-          { name: "❌ Ruolo Rimosso", value: ruoloDopo.toString(), inline: true },
-          { name: "🎯 Ruoli Extra Rimossi", value: EXTRA_ROLES.map(r => `<@&${r}>`).join(", "), inline: false },
+          { name: "👤 Utente", value: `${member.user.tag}`, inline: false },
+          { name: "📌 Da", value: ruoloPrima.toString(), inline: true },
+          { name: "❌ A", value: ruoloDopo.toString(), inline: true },
           { name: "📝 Motivo", value: motivo, inline: false }
         )
         .setTimestamp();

@@ -28,13 +28,12 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle("📥 Ruolo Assegnato (/pex)")
+        .setTitle("📥 PEX")
         .setColor("Green")
         .addFields(
-          { name: "👤 Utente", value: `${member.user.tag}`, inline: true },
-          { name: "📌 Ruolo Prima", value: ruoloPrima.toString(), inline: true },
-          { name: "✅ Ruolo Assegnato", value: ruoloDopo.toString(), inline: true },
-          { name: "🎯 Ruoli Extra", value: EXTRA_ROLES.map(r => `<@&${r}>`).join(", "), inline: false },
+          { name: "👤 Utente", value: `${member.user.tag}`, inline: false },
+          { name: "📌 Da", value: ruoloPrima.toString(), inline: true },
+          { name: "✅ A", value: ruoloDopo.toString(), inline: true },
           { name: "📝 Motivo", value: motivo, inline: false }
         )
         .setTimestamp();
