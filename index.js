@@ -239,6 +239,11 @@ client.on('messageCreate', async (message) => {
 
     const lista = JSON.parse(fs.readFileSync(filePath, "utf8"));
     const testo = message.content.toLowerCase();
+    
+    const whitelist = ["dio", "madonna", "gesù"];
+
+    if (whitelist.includes(testo)) return;
+
 
     if (lista.some(word => testo.includes(word))) {
         try {
