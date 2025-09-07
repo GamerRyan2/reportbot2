@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActivityType, MessageFlags } = require('discord.js');
 const { createCanvas, registerFont } = require('canvas');
-const { checkMessage, loadBlacklist, saveBlacklist, normalize } = require('./utils/antibestemmie');
 const config = require('./config.json');
 
 // Registra font personalizzato
