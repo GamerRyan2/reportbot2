@@ -47,4 +47,5 @@ module.exports = {
         return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta.`, ephemeral: true });
     }
 };
+
 console.log("Scrivo bestemmie in:", filePath);
