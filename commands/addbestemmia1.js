@@ -1,10 +1,18 @@
+const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const config = require("../config.json");
 
 module.exports = {
-    name: "addbestemmia1",
-    description: "Aggiunge una bestemmia alla lista bloccata",
+    data: new SlashCommandBuilder()
+        .setName("addbestemmia1")
+        .setDescription("Aggiunge una bestemmia alla lista bloccata")
+        .addStringOption(option =>
+            option.setName("parola")
+                .setDescription("La bestemmia da aggiungere")
+                .setRequired(true)
+        ),
+
     async execute(interaction) {
         // Controllo owner
         if (interaction.user.id !== config.ownerId) {
@@ -35,20 +43,6 @@ module.exports = {
         lista.push(parola.toLowerCase());
         fs.writeFileSync(filePath, JSON.stringify(lista, null, 2));
 
-        return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta alla lista.`, ephemeral: true });
-    },
-
-    // Definizione per slash command
-    data: {
-        name: "addbestemmia1",
-        description: "Aggiunge una bestemmia alla lista bloccata",
-        options: [
-            {
-                type: 3, // STRING
-                name: "parola",
-                description: "La bestemmia da aggiungere",
-                required: true
-            }
-        ]
+        return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta alla lista.`, ephemeral: false });
     }
 };
