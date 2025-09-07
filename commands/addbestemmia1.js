@@ -14,20 +14,26 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        console.log("➡️ Comando richiamato da:", interaction.user.tag);
+
         if (interaction.user.id !== config.ownerId) {
             return interaction.reply({ content: "❌ Solo l'owner può usare questo comando.", ephemeral: true });
         }
 
         const parola = interaction.options.getString("parola").toLowerCase();
         const filePath = path.resolve(__dirname, "..", "bestemmie.json");
-        console.log("Scrivo bestemmie in:", filePath);
-        
+
+        console.log("📂 Percorso JSON:", filePath);
+
         let lista = [];
         if (fs.existsSync(filePath)) {
             try {
-                lista = JSON.parse(fs.readFileSync(filePath, "utf8"));
+                const raw = fs.readFileSync(filePath, "utf8");
+                console.log("📖 Contenuto iniziale:", raw);
+                lista = raw ? JSON.parse(raw) : [];
             } catch (err) {
-                console.error("Errore leggendo bestemmie.json:", err);
+                console.error("❌ Errore leggendo bestemmie.json:", err);
+                lista = [];
             }
         }
 
@@ -38,14 +44,13 @@ module.exports = {
         lista.push(parola);
 
         try {
-            fs.writeFileSync(filePath, JSON.stringify(lista, null, 2));
-            console.log(`✅ Bestemmia "${parola}" salvata in ${filePath}`);
+            fs.writeFileSync(filePath, JSON.stringify(lista, null, 2), "utf8");
+            console.log("✅ Nuovo contenuto scritto:", lista);
         } catch (err) {
-            console.error("Errore scrivendo bestemmie.json:", err);
+            console.error("❌ Errore scrivendo bestemmie.json:", err);
             return interaction.reply({ content: "❌ Errore nel salvataggio.", ephemeral: true });
         }
 
-        return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta.`, ephemeral: true });
+        return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta.`, ephemeral: false });
     }
 };
-
