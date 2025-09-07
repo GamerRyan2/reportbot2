@@ -230,9 +230,26 @@ client.on('interactionCreate', async interaction => {
 });
 
 // ===== Filtro bestemmie =====
-client.on('messageCreate', async message => {
-    await checkMessage(message);
+// ===== Filtro bestemmie =====
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+
+    const filePath = path.resolve(__dirname, "bestemmie.json");
+    if (!fs.existsSync(filePath)) return;
+
+    const lista = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const testo = message.content.toLowerCase();
+
+    if (lista.some(word => testo.includes(word))) {
+        try {
+            await message.delete();
+            console.log(`❌ Messaggio cancellato di ${message.author.tag}: ${message.content}`);
+        } catch (err) {
+            console.error("Errore nella cancellazione:", err);
+        }
+    }
 });
+
 
 // ===== Login =====
 client.login(process.env.TOKEN);
