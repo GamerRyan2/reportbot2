@@ -1,4 +1,18 @@
 require('dotenv').config();
+const express = require('express');
+const app = express();
+const siteMessages = require('./messages/botMessages');
+
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send(`<h1>${siteMessages.welcome}</h1><p>${siteMessages.info}</p>`);
+});
+
+app.listen(PORT, () => {
+    console.log(`🌐 Sito web del bot in ascolto su porta ${PORT}`);
+});
+
 const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActivityType, MessageFlags } = require('discord.js');
@@ -233,20 +247,4 @@ client.on('messageCreate', async message => {
 // ===== Login =====
 client.login(process.env.TOKEN);
 
-
-// Aggiungi questa riga per importare i messaggi del sito
-const siteMessages = require('./messages/botMessages');
-
-// Semplice server web per mostrare i messaggi personalizzati
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.send(`<h1>${siteMessages.welcome}</h1><p>${siteMessages.info}</p>`);
-});
-
-app.listen(PORT, () => {
-    console.log(`🌐 Sito web del bot in ascolto su porta ${PORT}`);
-});
 
