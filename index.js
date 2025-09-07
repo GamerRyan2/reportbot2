@@ -232,3 +232,21 @@ client.on('messageCreate', async message => {
 
 // ===== Login =====
 client.login(process.env.TOKEN);
+
+
+// Aggiungi questa riga per importare i messaggi del sito
+const siteMessages = require('./messages/botMessages');
+
+// Semplice server web per mostrare i messaggi personalizzati
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send(`<h1>${siteMessages.welcome}</h1><p>${siteMessages.info}</p>`);
+});
+
+app.listen(PORT, () => {
+    console.log(`🌐 Sito web del bot in ascolto su porta ${PORT}`);
+});
+
