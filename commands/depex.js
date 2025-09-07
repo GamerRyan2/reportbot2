@@ -31,7 +31,7 @@ module.exports = {
         .setTitle("📤 DEPEX")
         .setColor("Red")
         .addFields(
-          { name: "👤 Utente", value: `${member.user.tag}`, inline: false },
+          { name: "👤 Utente", value: `<@${member.id}>`, inline: false },
           { name: "📌 Da", value: ruoloPrima.toString(), inline: true },
           { name: "❌ A", value: ruoloDopo.toString(), inline: true },
           { name: "📝 Motivo", value: motivo, inline: false }
