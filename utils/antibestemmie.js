@@ -1,19 +1,18 @@
 const fs = require("fs");
 const path = require("path");
 
-// Percorso blacklist dentro utils
-const dataDir = __dirname;
-const blacklistPath = path.join(dataDir, "blacklist.json");
+// Percorso file blacklist
+const blacklistPath = path.resolve(__dirname, "blacklist.json");
 
 // Crea file vuoto se non esiste
 if (!fs.existsSync(blacklistPath)) {
-    fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf-8");
+    fs.writeFileSync(blacklistPath, JSON.stringify([], null, 2), "utf8");
     console.log("[ANTIBESTEMMIE] blacklist.json creato in utils!");
 }
 
 function loadBlacklist() {
     try {
-        const data = fs.readFileSync(blacklistPath, "utf-8");
+        const data = fs.readFileSync(blacklistPath, "utf8");
         if (!data) return [];
         return JSON.parse(data);
     } catch (err) {
@@ -24,7 +23,7 @@ function loadBlacklist() {
 
 function saveBlacklist(list) {
     try {
-        fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf-8");
+        fs.writeFileSync(blacklistPath, JSON.stringify(list, null, 2), "utf8");
         console.log("[ANTIBESTEMMIE] Blacklist salvata!");
     } catch (err) {
         console.error("[ANTIBESTEMMIE] Errore salvando blacklist:", err);
@@ -34,7 +33,7 @@ function saveBlacklist(list) {
 function normalize(text) {
     return text
         .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // rimuove accenti
         .replace(/[0]/g, "o")
         .replace(/[1]/g, "i")
         .replace(/[2]/g, "z")
@@ -46,20 +45,36 @@ function normalize(text) {
         .replace(/[8]/g, "b")
         .replace(/[9]/g, "g")
         .replace(/[@!]/g, "a")
-        .replace(/[^a-z\s]/g, "");
+        .replace(/[^a-z\s]/g, ""); // rimuove simboli
 }
 
 function containsBadWord(text) {
     const blacklist = loadBlacklist();
     const normalizedText = normalize(text);
-    return blacklist.some(word => new RegExp(`\\b${word}\\b`, "i").test(normalizedText));
+
+    return blacklist.some(word => {
+        // escape regex speciale tipo . ? + * ecc
+        const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(`\\b${safeWord}\\b`, "i").test(normalizedText);
+    });
 }
+
+// Cooldown anti-flood: 5 secondi
+const cooldown = new Map();
 
 async function checkMessage(message) {
     if (message.author.bot) return;
+
     if (containsBadWord(message.content)) {
         try {
             await message.delete();
+
+            const now = Date.now();
+            if (cooldown.has(message.author.id) && now - cooldown.get(message.author.id) < 5000) {
+                return; // evita flood
+            }
+            cooldown.set(message.author.id, now);
+
             await message.channel.send(`${message.author}, il tuo messaggio è stato eliminato perché conteneva bestemmie.`);
         } catch (err) {
             console.error("[ANTIBESTEMMIE] Errore eliminando messaggio:", err);

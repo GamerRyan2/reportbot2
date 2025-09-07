@@ -1,17 +1,4 @@
 require('dotenv').config();
-const express = require('express');
-const app = express();
-const siteMessages = require('./messages/botMessages');
-
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.send(`<h1>${siteMessages.welcome}</h1><p>${siteMessages.info}</p>`);
-});
-
-app.listen(PORT, () => {
-    console.log(`🌐 Sito web del bot in ascolto su porta ${PORT}`);
-});
 
 const fs = require('fs');
 const path = require('path');

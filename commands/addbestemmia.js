@@ -1,36 +1,47 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { loadBlacklist, saveBlacklist, normalize } = require("../utils/antibestemmie");
+const { SlashCommandBuilder } = require('discord.js');
+const { loadBlacklist, saveBlacklist, normalize } = require('../utils/antibestemmie');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("addbestemmia")
-        .setDescription("Aggiunge una parola alla blacklist")
+        .setName('addbestemmie')
+        .setDescription('Aggiungi più bestemmie alla blacklist')
         .addStringOption(option =>
-            option.setName("parola")
-                  .setDescription("La parola da aggiungere")
-                  .setRequired(true)
+            option
+                .setName('parole')
+                .setDescription('Inserisci più bestemmie separate da virgola (es: parola1, parola2, parola3)')
+                .setRequired(true)
         ),
+
     async execute(interaction) {
-        try {
-            const word = interaction.options.getString("parola");
-            const normalizedWord = normalize(word);
-            const blacklist = loadBlacklist();
+        const rawInput = interaction.options.getString('parole');
+        const parole = rawInput
+            .split(',')
+            .map(p => normalize(p.trim()))
+            .filter(p => p.length > 0);
 
-            if (blacklist.includes(normalizedWord)) {
-                return interaction.reply({ content: `❌ La parola **${word}** è già nella blacklist.`, ephemeral: true });
-            }
+        if (parole.length === 0) {
+            return interaction.reply({ content: '❌ Non hai inserito parole valide.', ephemeral: true });
+        }
 
-            blacklist.push(normalizedWord);
-            saveBlacklist(blacklist);
+        let blacklist = loadBlacklist();
+        let aggiunte = [];
+        let giàPresenti = [];
 
-            await interaction.reply({ content: `✅ La parola **${word}** è stata aggiunta alla blacklist.`, ephemeral: true });
-        } catch (err) {
-            console.error("[ADD BESTEMMIA]", err);
-            if (!interaction.replied) {
-                await interaction.reply({ content: "❌ Errore durante l'interazione.", ephemeral: true });
+        for (const parola of parole) {
+            if (blacklist.includes(parola)) {
+                giàPresenti.push(parola);
             } else {
-                await interaction.followUp({ content: "❌ Errore durante l'interazione.", ephemeral: true });
+                blacklist.push(parola);
+                aggiunte.push(parola);
             }
         }
+
+        saveBlacklist(blacklist);
+
+        let risposta = '';
+        if (aggiunte.length > 0) risposta += `✅ Aggiunte: \`${aggiunte.join('`, `')}\`\n`;
+        if (giàPresenti.length > 0) risposta += `⚠️ Già presenti: \`${giàPresenti.join('`, `')}\``;
+
+        return interaction.reply({ content: risposta || 'Nessuna parola aggiunta.', ephemeral: false });
     }
 };
