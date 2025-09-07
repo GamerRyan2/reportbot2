@@ -14,35 +14,36 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // Controllo owner
         if (interaction.user.id !== config.ownerId) {
             return interaction.reply({ content: "❌ Solo l'owner può usare questo comando.", ephemeral: true });
         }
 
-        const parola = interaction.options.getString("parola");
+        const parola = interaction.options.getString("parola").toLowerCase();
+        const filePath = path.resolve(__dirname, "..", "bestemmie.json");
 
-        if (!parola) {
-            return interaction.reply({ content: "❌ Devi specificare una parola da aggiungere.", ephemeral: true });
-        }
-
-        // Path al file
-        const filePath = path.join(__dirname, "..", "bestemmie.json");
-
-        // Legge il file
         let lista = [];
         if (fs.existsSync(filePath)) {
-            lista = JSON.parse(fs.readFileSync(filePath, "utf8"));
+            try {
+                lista = JSON.parse(fs.readFileSync(filePath, "utf8"));
+            } catch (err) {
+                console.error("Errore leggendo bestemmie.json:", err);
+            }
         }
 
-        // Controlla se esiste già
-        if (lista.includes(parola.toLowerCase())) {
-            return interaction.reply({ content: "⚠️ Questa bestemmia è già presente nella lista.", ephemeral: true });
+        if (lista.includes(parola)) {
+            return interaction.reply({ content: "⚠️ Questa bestemmia è già presente.", ephemeral: true });
         }
 
-        // Aggiunge e salva
-        lista.push(parola.toLowerCase());
-        fs.writeFileSync(filePath, JSON.stringify(lista, null, 2));
+        lista.push(parola);
 
-        return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta alla lista.`, ephemeral: false });
+        try {
+            fs.writeFileSync(filePath, JSON.stringify(lista, null, 2));
+            console.log(`✅ Bestemmia "${parola}" salvata in ${filePath}`);
+        } catch (err) {
+            console.error("Errore scrivendo bestemmie.json:", err);
+            return interaction.reply({ content: "❌ Errore nel salvataggio.", ephemeral: true });
+        }
+
+        return interaction.reply({ content: `✅ Bestemmia **${parola}** aggiunta.`, ephemeral: true });
     }
 };
