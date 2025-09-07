@@ -20,7 +20,8 @@ module.exports = {
 
         const parola = interaction.options.getString("parola").toLowerCase();
         const filePath = path.resolve(__dirname, "..", "bestemmie.json");
-
+        console.log("Scrivo bestemmie in:", filePath);
+        
         let lista = [];
         if (fs.existsSync(filePath)) {
             try {
@@ -48,4 +49,3 @@ module.exports = {
     }
 };
 
-console.log("Scrivo bestemmie in:", filePath);
